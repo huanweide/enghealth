@@ -1,0 +1,25 @@
+{
+  "name": "enghealth",
+  "version": "1.0.0",
+  "description": "工程健康家族「元仪表盘 / 统一体检入口」——零依赖单文件 CLI，把 14 件套 single-binary 健康检查聚合成一次命令、一张体检表、一个总分。",
+  "bin": {
+    "enghealth": "index.js"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "engineering-health",
+    "code-quality",
+    "cli",
+    "zero-dependency",
+    "ci-gate",
+    "lint",
+    "static-analysis"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}
