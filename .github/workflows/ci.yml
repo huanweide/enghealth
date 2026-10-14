@@ -1,0 +1,76 @@
+name: enghealth-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16, 18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: 跑测试套件
+        run: node test.js
+
+  smoke:
+    # 守住 CLI 契约本身：单测全绿也不代表命令行还认得这些参数
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: --version / --help 退出码
+        run: |
+          node index.js --version
+          node index.js --help
+      - name: 未知选项必须 exit 2
+        run: |
+          set +e
+          node index.js --definitely-not-an-option . >/dev/null 2>&1
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then echo "期望 exit 2，实际 $code"; exit 1; fi
+          echo "未知选项正确 exit 2"
+      - name: --json 必须输出纯 JSON 且不含尾部文本
+        run: |
+          node index.js --json . | node -e "
+          let raw = '';
+          process.stdin.on('data', c => raw += c);
+          process.stdin.on('end', () => {
+            const d = JSON.parse(raw);
+            if (typeof d.overallScore !== 'number') throw new Error('缺 overallScore');
+            if (typeof d.brothersTotal !== 'number') throw new Error('缺 brothersTotal');
+            if (!Array.isArray(d.brothers)) throw new Error('brothers 应为数组');
+            if (d.brothers.length !== d.brothersTotal) throw new Error('brothers 长度与总数不符');
+            console.log('JSON 契约 OK, 总分=' + d.overallScore + ' 兄弟=' + d.brothersFound + '/' + d.brothersTotal);
+          });"
+      - name: 门禁 --min-overall 200 必须失败
+        run: |
+          set +e
+          node index.js --min-overall 200 . >/dev/null 2>&1
+          code=$?
+          set -e
+          if [ "$code" -ne 2 ]; then echo "期望 exit 2，实际 $code"; exit 1; fi
+          echo "门禁正确拦截"
+
+  dogfood:
+    # enghealth 体检自己
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 自身概览不得报高危
+        run: node index.js . --fail-on-low 60
+      - name: 自身概览健康分不得低于 80
+        run: node index.js . --min-overall 80
