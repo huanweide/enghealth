@@ -1,0 +1,71 @@
+{
+  "repo": "huanweide/enghealth",
+  "owner": "huanweide",
+  "round": 1,
+  "lastOptimized": "2026-10-14",
+  "status": "optimized",
+  "survivalVerdict": "keep",
+  "direction": "单点深度特化：把「统一编排」从纸面承诺变成实测可信（修测试假绿 + 补 CI + 拆掉危险安装指引）",
+  "decisionLog": [
+    {
+      "date": "2026-10-14",
+      "survival": "keep",
+      "reason": "enghealth 是「工程健康家族」的元仪表盘，职责是编排 14 件套兄弟工具。检索同类：SonarQube 有统一报告但需服务端 + 数据库 + 依赖安装；CodeFactor/Scorecard 等为 SaaS 或需 CI 插件；JSLint/ESLint 只做单点风格。本仓不可替代形态是「零依赖单文件 + 把同族 14 个独立 CLI 编排成一张表一个总分 + 兄弟缺失时降级跳过绝不误判」。竞品无一提供该形态。保留。本轮不追 star，而是把「测试可信度」和「安装指引安全性」两个真问题修掉。",
+      "alternativesRejected": [
+        "废弃该仓（它只是聚合器，没有独立算法）：错误判断——聚合编排本身就是独立产品形态，且是家族唯一入口",
+        "转向做通用 CI 报告平台：与 SonarQube 正面竞争，碾压级劣势，否决"
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "finding": "P0 · 主分支自带测试就是挂的（11 通过 / 1 失败）",
+      "detail": "test.js 第108 行写const familyDir = path.join(__dirname, '..') 并注释为作者本机的 forge/projects/2026-08-15/ 布局，假设 14 个兄弟工具源码就躺在上级目录里。GitHub 上 clone 后那里什么也没有 → 该用例必然失败。又因为仓库完全没有 CI，这个红灯从上线起就一直挂着没人发现。这是「测试写死作者本机路径 + 项目零 CI」的组合事故。",
+      "fix": "改为自带 fixture：新增 mkFakeToolsDir()，动态生成会输出合法 JSON 分数的假兄弟 CLI，完全摆脱本机布局假设。同时把原来「至少发现 1 个」这种弱断言强化为精确断言：必须发现 2 个、分数必须精确等于 88/72、未放入的12 个兄弟必须标 found=false 且 score=null（防止把「未发现」静默当 0 分混进总分）。",
+      "verification": "13/13 全绿。新增第二条测试「并入低分兄弟会真实拉低总分」实测：并入 10 分兄弟后总分 91→51，证明编排链路真的生效而非只是标记存在。"
+    },
+    {
+      "date": "2026-10-14",
+      "finding": "P0 · README 的安装命令会引导用户装别人的无关包（安全性问题）",
+      "detail": "原 README 教用户 `npx enghealth .` 与 `npm i -g devdoctor testlite debtlens a11ydoctor awaitscan cycscan secscan dupscan typedoctor repodoctor docdoctor commitdoctor reldoctor pkgdoctor`。逐个查 npm registry 实测：15 个包里 11 个 404（根本不存在）；其中 testlite / secscan / docdoctor 竟然存在，但全是别人的无关包 —— testlite 是 bdsomer 的测试库、secscan 是 Mozilla 的 scanjs、docdoctor 是修 rST 的工具。照抄这条命令会安装并执行一堆与本项目无关的第三方代码。这比死链严重得多，是功能性的安全误导。",
+      "fix": "重写安装章节：给出实测可用的clone + node index.js / npm link 路径（npm link 已实测通过，enghealth --version 全局可调用），并把原来的 npx / npm i -g 明确标注为「当前无效」与「危险」，逐个说明那 3 个同名包究竟是谁的包、做什么用，避免用户再踩。兄弟体检改用 --tools-dir 显式指向自己 clone 的目录。"
+    },
+    {
+      "date": "2026-10-14",
+      "finding": "P1 · 零 CI（单测可能长期红灯而无人知晓）",
+      "detail": "仓库没有任何 .github/workflows。本轮接手时 test.js 就是红的，若无 CI 永远不会有人发现。",
+      "fix": "新增三段 CI：test（Node 16/18/20/22 矩阵，跑 test.js）、smoke（守住 CLI 契约：--version/--help 退出码、未知选项必须 exit 2、--json 必须输出可解析且结构完整的纯 JSON、--min-overall 200 必须被门禁拦下）、dogfood（enghealth 体检自身，概览不得报低分、总分不低于 80）。所有 CI 命令均在本地逐条实测通过后才写入。"
+    },
+    {
+      "date": "2026-10-14",
+      "finding": "P2 · 零 .gitignore",
+      "detail": "仓库没有任何 .gitignore。对一个输出「.env 是否被忽略」这类结论、且每天被 CI 扫描的工具，自身不守凭据铁律是自相矛盾。",
+      "fix": "补齐标准凭据类模板。"
+    },
+    {
+      "date": "2026-10-14",
+      "finding": "P2 · README 示例残留作者本机路径",
+      "detail": "用法示例写 enghealth . --tools-dir /path/to/forge/projects/2026-08-15，泄漏了作者本机的 forge 目录布局。",
+      "fix": "改为中性占位路径 /path/to/tools-dir。"
+    }
+  ],
+  "improvements": [
+    "P0 修主分支长期红灯的测试：去掉写死的作者本机目录假设，改用自建 fixture 假兄弟 CLI；弱断言「至少 1 个」强化为精确断言（2 个 + 分数精确 + 未发现者score 必须为 null）",
+    "P0 新增测试验证编排真实生效：并入 10 分兄弟后总分 91→51",
+    "P0 拆掉危险的安装指引：实测确认 11/15 个包在 npm 不存在、另 3 个是别人的无关包（bdsomer/testlite、mozilla/scanjs、修 rST 的 docdoctor），改写为实测可用路径并标注风险",
+    "P1 新增三段 CI：Node 16/18/20/22 测试矩阵 + CLI 契约 smoke + dogfood 自检（原先零 CI，导致本轮接手时测试就是红的）",
+    "P2 补 .gitignore 凭据类模板（原先完全没有）",
+    "P2 README 示例去除作者本机 forge 目录路径"
+  ],
+  "selfReview": {
+    "mistakesMadeThisRun": [
+      "写 CI 时用了 node -e \"require('/tmp/out.json')\" 读临时文件。本机 Git Bash 的 /tmp 与 Windows 路径不同步导致本地复现失败。改为 stdin 管道写法，更可移植且已实测通过。教训：CI 里的数据传递优先用 stdin，别依赖临时文件路径。"
+    ],
+    "carriedOverFromDoctors": [
+      "验证退出码时禁止把被测命令放在管道里取 $?（上一仓踩过，取到的是末端命令的码）",
+      "新写的门禁要做变异测试才敢信（上一仓已建立此纪律）",
+      "README 里凡写安装/运行命令，必须本机实测跑通再写，不写没验证过的话"
+    ],
+    "tendencyToWatch": "同族 23 个仓库普遍存在三类共性缺陷：README 里的 npx/npm -g 死路径、写死作者本机布局的测试、零 CI。下一批仓库应优先按这三类维度快速扫描，不必每次从零阅读全仓。"
+  },
+  "rollback": "本次为 squash 单 commit，一条 git revert 即可整体撤销"
+}

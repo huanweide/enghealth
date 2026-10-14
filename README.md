@@ -21,15 +21,42 @@ enghealth  =  概览(自身零依赖扫描)  +  Σ(14 兄弟 CLI 健康分)  →
 
 ## 安装
 
-```bash
-# 单独用（仅概览体检，零依赖）
-npx enghealth <目标目录>
+**零依赖、零安装**，clone 下来直接用，只需本机有 Node.js ≥ 16：
 
-# 或用 family（把 14 件套也装全局，enghealth 自动并入它们）
-npm i -g devdoctor testlite debtlens a11ydoctor awaitscan cycscan secscan dupscan typedoctor repodoctor docdoctor commitdoctor reldoctor pkgdoctor enghealth
+```bash
+git clone https://github.com/huanweide/enghealth.git
+cd enghealth
+node index.js .              # 体检当前目录
+node index.js --help
 ```
 
-本地开发 / 试用 family 联动：把 `--tools-dir` 指向 family 源码目录（每个工具是 `ol-<name>/index.js`），enghealth 会逐个调用。
+想直接用 `enghealth` 这个命令：
+
+```bash
+npm link                     # 注册为全局命令
+enghealth .
+```
+
+### 关于 `npx enghealth` 与 `npm i -g`（重要）
+
+**本项目当前尚未发布到 npm**，因此以下写法**现在都不可用**，请以 `node index.js` / `npm link` 为准：
+
+```bash
+# ❌ 目前无效：npm 上没有 enghealth 这个包
+npx enghealth .
+
+# ❌ 危险：下面 14 个名字里有 11 个在 npm 上不存在
+#另外 3 个（testlite / secscan / docdoctor）在 npm 上是别人完全无关的包
+#   —— testlite  是个测试库（bdsomer/testlite）
+#   —— secscan是 Mozilla 的 JS 静态分析工具（mozilla/scanjs）
+#   —— docdoctor 是修 rST 文档的工具
+# 照抄这条命令会安装并执行一堆与你项目无关的第三方代码。
+npm i -g devdoctor testlite debtlens a11ydoctor awaitscan cycscan secscan \
+         dupscan typedoctor repodoctor docdoctor commitdoctor reldoctor pkgdoctor
+```
+
+兄弟体检请用 `--tools-dir` 显式指向**你自己 clone 出来的**工具目录（见下节），
+而不是依赖 npm 上的同名包。
 
 ## 用法
 
@@ -40,8 +67,8 @@ enghealth .
 # 仅看总分与门禁结论
 enghealth . --quiet
 
-# 并入 family 兄弟体检（指向 family 源码目录）
-enghealth . --tools-dir /path/to/forge/projects/2026-08-15
+# 并入 family 兄弟体检（--tools-dir 可多次指定）
+enghealth . --tools-dir /path/to/tools-dir
 
 # CI 门禁：总分不低于 60、任一兄弟不低于 70
 enghealth . --min-overall 60 --fail-on-low 70

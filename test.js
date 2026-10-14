@@ -103,16 +103,57 @@ t('兄弟 JSON（score 字段）可容错解析并入矩阵', () => {
   assert.strictEqual(tl.score, 85, '应解析出 score=85');
 });
 
-// 6) --tools-dir 发现真实兄弟（用 family 源码回退）
-t('--tools-dir 指向 family 源码并入兄弟体检', () => {
-  const familyDir = path.join(__dirname, '..'); // forge/projects/2026-08-15/
+// 6) --tools-dir 发现兄弟并入体检
+//
+// 历史写法：const familyDir = path.join(__dirname, '..')，并假设兄弟工具源码就在
+// 上级目录（作者本机的 forge/projects/2026-08-15/ 布局）。GitHub 上 clone 后那里
+// 什么也没有 → 该测试在 main 分支长期失败，且因为仓库没有 CI 一直没人发现。
+// 现在改为自带 fixture：造若干个「会输出合法 JSON 的假兄弟 CLI」，
+// 既不依赖本机布局，又真正验证了发现→执行→解析→并入分数这条完整链路。
+function mkFakeToolsDir(specs) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'enghealth-tools-'));
+  for (const [name, score] of Object.entries(specs)) {
+    const pkgDir = path.join(dir, name);
+    fs.mkdirSync(pkgDir, { recursive: true });
+    fs.writeFileSync(path.join(pkgDir, 'index.js'),
+      '#!/usr/bin/env node\n' +
+      "'use strict';\n" +
+      '// 测试用假兄弟 CLI：只认 --json <dir>，输出合法 JSON 分数\n' +
+      'const args = process.argv.slice(2);\n' +
+      'if (args.includes("--json")) {\n' +
+      '  process.stdout.write(JSON.stringify({ score: ' + score + ', gate: { passed: ' + (score >= 60) + ' } }));\n' +
+      '  process.exit(0);\n' +
+      '}\n' +
+      'process.exit(0);\n');
+  }
+  return dir;
+}
+
+t('--tools-dir 指向 tools 目录并入兄弟体检', () => {
+  const toolsDir = mkFakeToolsDir({ pkgdoctor: 88, docdoctor: 72 });
   const target = mkProject({ 'README.md': 'r', 'LICENSE': 'MIT', 'package.json': JSON.stringify({ name: 'x', version: '1.0.0' }) });
-  // 仅找一个真实存在的兄弟（pkgdoctor 必存在）
-  const out = JSON.parse(execFileSync('node', [CLI, '--json', '--tools-dir', familyDir, target], { encoding: 'utf8' }));
+  const out = JSON.parse(execFileSync('node', [CLI, '--json', '--tools-dir', toolsDir, target], { encoding: 'utf8' }));
   const found = out.brothers.filter((b) => b.found && b.score !== null);
-  assert.ok(found.length >= 1, '至少应发现 pkgdoctor 并入分数');
+  assert.strictEqual(found.length, 2, '应发现并入 fixture 里的 2 个兄弟');
   const pkg = out.brothers.find((b) => b.name === 'pkgdoctor');
-  assert.ok(pkg && pkg.score !== null, 'pkgdoctor 分数应被解析');
+  assert.ok(pkg && pkg.score === 88, 'pkgdoctor 分数应被正确解析为 88，实际: ' + JSON.stringify(pkg));
+  const doc = out.brothers.find((b) => b.name === 'docdoctor');
+  assert.ok(doc && doc.score === 72, 'docdoctor 分数应被正确解析为 72');
+  assert.strictEqual(out.brothersFound, 2);
+  assert.strictEqual(out.brothersTotal, 14, '家族清单应为 14 件套');
+  // 未放入 tools-dir 的兄弟必须标为未发现，而不是被静默当成 0 分
+  const missing = out.brothers.filter((b) => !b.found);
+  assert.strictEqual(missing.length, 12, '其余 12 个兄弟应标为未发现');
+  assert.ok(missing.every((b) => b.score === null), '未发现的兄弟不应有分数');
+});
+
+t('--tools-dir 兄弟分数低时总分会拉低（并入真实生效）', () => {
+  const toolsDir = mkFakeToolsDir({ pkgdoctor: 10 });
+  const target = mkProject({ 'README.md': 'r', 'LICENSE': 'MIT', 'package.json': JSON.stringify({ name: 'x', version: '1.0.0' }) });
+  const withBrother = JSON.parse(execFileSync('node', [CLI, '--json', '--tools-dir', toolsDir, target], { encoding: 'utf8' }));
+  const alone = JSON.parse(execFileSync('node', [CLI, '--json', target], { encoding: 'utf8' }));
+  assert.ok(withBrother.overallScore < alone.overallScore,
+    '并入 10 分的兄弟后总分应低于独立分，实际: ' + withBrother.overallScore + ' vs ' + alone.overallScore);
 });
 
 // 7) 未提供 --tools-dir：所有兄弟跳过，自身仍出体检

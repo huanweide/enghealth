@@ -1,0 +1,66 @@
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# === 凭据类：永久禁止入 Git ===
+# 环境变量（真实密钥只准在环境变量 / GitHub Secrets，不准进仓库）
+.env
+.env.*
+!.env.example
+!.env.template
+
+# 密钥 / 证书 / 私钥
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.priv
+id_rsa
+id_ecdsa
+id_ed25519
+id_dsa
+.ssh/
+*.pub
+
+# 云平台凭据目录
+.aws/
+.azure/
+.gcp/
+.gcloud/
+.kube/
+.k8s/
+kubeconfig*
+
+# 通用凭据文件
+credentials.json
+credentials.yaml
+credentials.yml
+service-account*.json
+auth.json
+tokens.json
+token.json
+secrets.json
+secret*.json
+*.secret
+*.token
+*.session
+cookies.json
+*.cookies
+
+# 包管理器 / 认证凭据
+.npmrc
+.pypirc
+.pip.conf
+pip.conf
+.netrc
+.git-credentials
+.github-token
+.gho
