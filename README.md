@@ -1,3 +1,10 @@
+> [!WARNING]
+> **⚠️ 本轴已并入 [doctors](https://github.com/huanweide/doctors) 家族 monorepo → 本仓停止维护。**
+>
+> 代码原件已迁至 [`doctors/packages/enghealth/`](https://github.com/huanweide/doctors/tree/main/packages/enghealth)，
+> 在 doctors 里以 `doctors eng` 子命令调用（或 `node packages/enghealth/index.js`）。
+> 本仓不再接受新改动，请前往 <https://github.com/huanweide/doctors>。
+
 <!-- badges -->
 [![License](https://img.shields.io/github/license/huanweide/enghealth)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/huanweide/enghealth)](https://github.com/huanweide/enghealth/stargazers)
