@@ -11,7 +11,7 @@
 [![Engineering Health Family](https://img.shields.io/badge/Engineering%20Health%20Family-18%20axes-22c55e)](https://github.com/huanweide/family-showcase)
 <!-- /badges -->
 
-> **English**: The Engineering Health Family's meta-dashboard / unified runner — one zero-dependency CLI that aggregates the whole family into a single scorecard + CI gate.
+**English** · [README_EN.md](./README_EN.md)
 
 **🔧 Part of the [Engineering Health Family](https://github.com/huanweide/family-showcase)** (18 zero-dependency checkup axes). This repo is the **orchestration layer**: one command → family-wide scorecard. See also [doctors](https://github.com/huanweide/doctors) (monorepo hub) and [family-showcase](https://github.com/huanweide/family-showcase) (18-axis panorama).
 
