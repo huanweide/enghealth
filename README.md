@@ -17,7 +17,7 @@
 
 # enghealth
 
-> 工程健康家族「元仪表盘 / 统一体检入口」——零依赖单文件 CLI。
+> **工程健康家族**（一组零依赖代码体检工具的集合）的「元仪表盘 / 统一体检入口」——零依赖单文件 CLI。
 
 工程健康家族已 **14 件套**（源码层九轴 + git 层四件套 + 配置层 pkgdoctor），但它们各自为政、零依赖单兵作战。**enghealth 把整支 family 聚合成一次命令、一张体检表、一个总分。**
 
@@ -171,7 +171,7 @@ MIT
 
 ## 作者
 
-由 **ReTr · huanweide** 维护 · [GitHub 主页](https://github.com/huanweide)
+由 **huanweide** 维护 · [GitHub 主页](https://github.com/huanweide)
 
 ## CI 门禁用法
 
